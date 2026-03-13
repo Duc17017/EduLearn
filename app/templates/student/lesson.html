@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+{% block title %}Xem bài học - EduLearn{% endblock %}
+{% block content %}
+<div class="lesson-page" data-course-id="{{ course_id }}" data-lesson-id="{{ lesson_id }}">
+    <div class="lesson-container">
+        <!-- Video Player Section -->
+        <div class="video-section">
+            <div class="video-container">
+                <video id="videoPlayer" class="video-player" controls>
+                    <source src="" type="video/mp4">
+                    Trình duyệt của bạn không hỗ trợ video.
+                </video>
+            </div>
+            
+            <div class="video-info">
+                <h1 class="lesson-title" id="lessonTitle">Đang tải...</h1>
+                <div class="lesson-meta">
+                    <span class="lesson-duration" id="lessonDuration">0:00</span>
+                    <button class="btn btn-sm btn-outline" id="markCompleteBtn">
+                        <span class="complete-icon">✓</span> Đánh dấu hoàn thành
+                    </button>
+                </div>
+                <p class="lesson-description" id="lessonDescription"></p>
+            </div>
+        </div>
+
+        <!-- Lessons Sidebar -->
+        <div class="lessons-sidebar">
+            <div class="sidebar-header">
+                <h3>Nội dung khóa học</h3>
+                <span class="progress-badge" id="courseProgress">0%</span>
+            </div>
+            
+            <div class="lessons-list" id="lessonsList">
+                <!-- Lessons will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .lesson-page {
+        padding: 24px;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+    
+    .lesson-container {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 24px;
+    }
+    
+    @media (max-width: 1024px) {
+        .lesson-container {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .video-section {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .video-container {
+        width: 100%;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        aspect-ratio: 16 / 9;
+    }
+    
+    .video-player {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    .video-info {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+    }
+    
+    .lesson-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+    
+    .lesson-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .lesson-duration {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+    
+    .complete-icon {
+        margin-right: 6px;
+    }
+    
+    #markCompleteBtn.completed {
+        background: var(--green);
+        color: #000;
+        border-color: var(--green);
+    }
+    
+    .lesson-description {
+        color: var(--text-secondary);
+        line-height: 1.7;
+    }
+    
+    .lessons-sidebar {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        height: fit-content;
+        max-height: calc(100vh - 150px);
+        position: sticky;
+        top: 100px;
+    }
+    
+    .sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .sidebar-header h3 {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    
+    .progress-badge {
+        background: var(--accent-light);
+        color: var(--accent);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .lessons-list {
+        overflow-y: auto;
+        max-height: calc(100vh - 250px);
+    }
+    
+    .lesson-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    
+    .lesson-item:hover {
+        background: var(--bg-surface);
+    }
+    
+    .lesson-item.active {
+        background: var(--accent-light);
+        border-left: 3px solid var(--accent);
+    }
+    
+    .lesson-item.completed .lesson-number {
+        background: var(--green);
+        color: #000;
+    }
+    
+    .lesson-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--bg-surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    
+    .lesson-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .lesson-name {
+        font-size: 0.85rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .lesson-duration-small {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+    
+    .completed-check {
+        color: var(--green);
+        font-size: 1rem;
+    }
+</style>
+
+<script>
+const courseId = '{{ course_id }}';
+const lessonId = '{{ lesson_id }}';
+let isCompleted = false;
+
+async function loadLesson() {
+    try {
+        const response = await fetch(`/lessons/${lessonId}?courseId=${courseId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const lesson = result.lesson;
+            document.getElementById('lessonTitle').textContent = lesson.title;
+            document.getElementById('lessonDescription').textContent = lesson.description || 'Chưa có mô tả';
+            document.getElementById('lessonDuration').textContent = formatDuration(lesson.duration);
+            
+            if (lesson.videoUrl) {
+                document.getElementById('videoPlayer').src = lesson.videoUrl;
+            }
+            
+            isCompleted = lesson.isCompleted || false;
+            updateCompleteButton();
+            
+            // Load video position
+            loadVideoPosition();
+        }
+    } catch (error) {
+        console.error('Failed to load lesson:', error);
+    }
+}
+
+async function loadCourseLessons() {
+    try {
+        const response = await fetch(`/courses/${courseId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const course = result.course;
+            const lessons = course.lessons || [];
+            
+            document.getElementById('courseProgress').textContent = course.progress || '0%';
+            
+            const lessonsList = document.getElementById('lessonsList');
+            lessonsList.innerHTML = lessons.map((lesson, index) => `
+                <div class="lesson-item ${lesson.id === lessonId ? 'active' : ''}" 
+                     onclick="window.location.href='/lesson/${courseId}/${lesson.id}'">
+                    <div class="lesson-number">${index + 1}</div>
+                    <div class="lesson-info">
+                        <div class="lesson-name">${lesson.title}</div>
+                        <div class="lesson-duration-small">${formatDuration(lesson.duration)}</div>
+                    </div>
+                    ${lesson.isCompleted ? '<span class="completed-check">✓</span>' : ''}
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Failed to load lessons:', error);
+    }
+}
+
+async function loadVideoPosition() {
+    try {
+        const response = await fetch(`/progress/get-position?courseId=${courseId}&lessonId=${lessonId}`);
+        const result = await response.json();
+        
+        if (result.success && result.position > 0) {
+            document.getElementById('videoPlayer').currentTime = result.position;
+        }
+    } catch (error) {
+        console.error('Failed to load position:', error);
+    }
+}
+
+function updateCompleteButton() {
+    const btn = document.getElementById('markCompleteBtn');
+    if (isCompleted) {
+        btn.classList.add('completed');
+        btn.innerHTML = '<span class="complete-icon">✓</span> Đã hoàn thành';
+    }
+}
+
+document.getElementById('markCompleteBtn').addEventListener('click', async () => {
+    try {
+        const endpoint = isCompleted ? '/progress/mark-incomplete' : '/progress/mark-complete';
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ courseId, lessonId })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            isCompleted = !isCompleted;
+            updateCompleteButton();
+            loadCourseLessons();
+        }
+    } catch (error) {
+        console.error('Failed to update completion:', error);
+    }
+});
+
+// Auto-save video position every 10 seconds
+const video = document.getElementById('videoPlayer');
+let saveTimer;
+
+video.addEventListener('timeupdate', () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+        if (video.currentTime > 0) {
+            fetch('/progress/save-position', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseId,
+                    lessonId,
+                    position: Math.floor(video.currentTime)
+                })
+            });
+        }
+    }, 10000);
+});
+
+// Auto-mark complete at 90%
+video.addEventListener('timeupdate', () => {
+    if (!isCompleted && video.duration > 0 && video.currentTime / video.duration > 0.9) {
+        document.getElementById('markCompleteBtn').click();
+    }
+});
+
+function formatDuration(seconds) {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+loadLesson();
+loadCourseLessons();
+</script>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Tạo khóa học mới - EduLearn{% endblock %}
+{% block content %}
+<div class="create-course-page">
+    <div class="page-header">
+        <h1>Tạo khóa học mới</h1>
+    </div>
+
+    <form class="course-form" id="createCourseForm">
+        <div class="form-section">
+            <h2>Thông tin khóa học</h2>
+            
+            <div class="form-group">
+                <label class="form-label">Tên khóa học *</label>
+                <input type="text" class="form-input" id="courseTitle" 
+                       placeholder="Nhập tên khóa học" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mô tả khóa học</label>
+                <textarea class="form-textarea" id="courseDescription" 
+                          placeholder="Mô tả nội dung khóa học" rows="4"></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Danh mục *</label>
+                    <select class="form-select" id="courseCategory" required>
+                        <option value="">Chọn danh mục</option>
+                        <option value="programming">Lập trình</option>
+                        <option value="design">Thiết kế</option>
+                        <option value="business">Kinh doanh</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="language">Ngoại ngữ</option>
+                        <option value="data-science">Khoa học dữ liệu</option>
+                        <option value="mobile-dev">Phát triển Mobile</option>
+                        <option value="cloud">Điện toán đám mây</option>
+                        <option value="security">An ninh mạng</option>
+                        <option value="general">Chung</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Ảnh thumbnail</label>
+                    <div class="thumbnail-upload">
+                        <div class="thumbnail-preview" id="thumbnailPreview">
+                            <span>📷</span>
+                            <p>Chọn ảnh</p>
+                        </div>
+                        <input type="file" id="thumbnailInput" accept="image/*" hidden>
+                        <input type="hidden" id="thumbnailUrl">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                Hủy
+            </button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                Tạo khóa học
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .create-course-page {
+        padding: 32px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    .course-form {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 32px;
+    }
+
+    .form-section {
+        margin-bottom: 32px;
+    }
+
+    .form-section h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 600px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .thumbnail-upload {
+        cursor: pointer;
+    }
+
+    .thumbnail-preview {
+        width: 100%;
+        height: 150px;
+        background: var(--bg-surface);
+        border: 2px dashed var(--border);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+    }
+
+    .thumbnail-preview:hover {
+        border-color: var(--accent);
+    }
+
+    .thumbnail-preview span {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+
+    .thumbnail-preview p {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .thumbnail-preview.has-image {
+        background-size: cover;
+        background-position: center;
+        border-style: solid;
+    }
+
+    .thumbnail-preview.has-image p {
+        display: none;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+    }
+</style>
+
+<script>
+const thumbnailInput = document.getElementById('thumbnailInput');
+const thumbnailPreview = document.getElementById('thumbnailPreview');
+const thumbnailUrl = document.getElementById('thumbnailUrl');
+
+thumbnailPreview.addEventListener('click', () => thumbnailInput.click());
+
+thumbnailInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        thumbnailPreview.style.backgroundImage = `url(${e.target.result})`;
+        thumbnailPreview.classList.add('has-image');
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to server
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+
+    try {
+        const response = await fetch('/lessons/upload-thumbnail', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            thumbnailUrl.value = result.thumbnailUrl;
+        }
+    } catch (error) {
+        console.error('Upload failed:', error);
+    }
+});
+
+document.getElementById('createCourseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Đang tạo...';
+
+    const courseData = {
+        title: document.getElementById('courseTitle').value,
+        description: document.getElementById('courseDescription').value,
+        category: document.getElementById('courseCategory').value,
+        thumbnail: thumbnailUrl.value
+    };
+
+    try {
+        const response = await fetch('/courses/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(courseData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            window.location.href = `/instructor/course/${result.courseId}`;
+        } else {
+            alert(result.message || 'Tạo khóa học thất bại');
+        }
+    } catch (error) {
+        console.error('Create course failed:', error);
+        alert('Đã xảy ra lỗi');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Tạo khóa học';
+    }
+});
+</script>
+{% endblock %}

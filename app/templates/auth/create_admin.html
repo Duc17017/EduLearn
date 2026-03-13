@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Admin - EduLearn</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 10px;
+            display: none;
+        }
+        .result.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            color: #004085;
+        }
+        .info strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tạo Tài Khoản Admin</h1>
+        <p class="subtitle">EduLearn - Hệ thống quản lý</p>
+
+        <div class="info">
+            <strong>Secret Key:</strong>
+            edulearn_admin_2026
+        </div>
+
+        <form id="createAdminForm">
+            <div class="form-group">
+                <label>Secret Key</label>
+                <input type="password" id="secretKey" required placeholder="Nhập secret key">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" required placeholder="admin@example.com">
+            </div>
+            <div class="form-group">
+                <label>Tên Admin</label>
+                <input type="text" id="name" required placeholder="Tên của bạn">
+            </div>
+            <button type="submit" id="submitBtn">Tạo Admin</button>
+        </form>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('createAdminForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const secretKey = document.getElementById('secretKey').value;
+            const email = document.getElementById('email').value;
+            const name = document.getElementById('name').value;
+            const btn = document.getElementById('submitBtn');
+            const result = document.getElementById('result');
+
+            btn.disabled = true;
+            btn.textContent = 'Đang tạo...';
+            result.className = 'result';
+            result.style.display = 'none';
+
+            try {
+                const response = await fetch('/auth/create-admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secretKey, email, name })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.className = 'result success';
+                    result.textContent = `✓ Tạo admin thành công!\n\nUID: ${data.uid}\nEmail: ${email}`;
+                } else {
+                    result.className = 'result error';
+                    result.textContent = '✗ Lỗi: ' + (data.error || 'Không thể tạo admin');
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = '✗ Lỗi kết nối: ' + error.message;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Tạo Admin';
+        });
+    </script>
+</body>
+</html>

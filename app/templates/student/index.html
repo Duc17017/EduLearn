@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang chủ - EduLearn</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <style>
+        .hero { padding: 60px 0; text-align: center; }
+        .hero-badge { display: inline-block; padding: 8px 16px; background: var(--accent-light); color: var(--accent); border-radius: 999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 24px; }
+        .hero-title { font-size: 3rem; font-weight: 800; margin-bottom: 16px; background: linear-gradient(135deg, var(--text-primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero-subtitle { font-size: 1.25rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 32px; }
+        .hero-buttons { display: flex; gap: 16px; justify-content: center; }
+        .hero-buttons .btn { padding: 14px 32px; font-size: 1rem; }
+        .section { padding: 48px 0; }
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+        .section-title { font-size: 1.5rem; font-weight: 700; }
+        .section-link { color: var(--accent); font-weight: 600; }
+        .categories-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+        @media (max-width: 900px) { .categories-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 600px) { .categories-grid { grid-template-columns: repeat(2, 1fr); } }
+        .category-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .category-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .category-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .category-name { font-weight: 600; margin-bottom: 4px; }
+        .category-count { font-size: 0.8rem; color: var(--text-muted); }
+        .courses-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        @media (max-width: 1100px) { .courses-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 800px) { .courses-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 500px) { .courses-grid { grid-template-columns: 1fr; } }
+        .stats-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 48px; margin: 48px 0; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; text-align: center; }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        .stat-number { font-size: 2.5rem; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+        .stat-label { color: var(--text-secondary); }
+    </style>
+</head>
+<body data-course-id="">
+    {% extends "base.html" %}
+    {% block content %}
+    <div class="hero">
+        <span class="hero-badge">🚀 Nền tảng học trực tuyến hàng đầu</span>
+        <h1 class="hero-title">Học mọi lúc, mọi nơi</h1>
+        <p class="hero-subtitle">Khám phá hàng nghìn khóa học chất lượng cao từ các giảng viên uy tín. Bắt đầu hành trình học tập của bạn ngay hôm nay.</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('main.courses') }}" class="btn btn-primary btn-lg">Khám phá khóa học</a>
+            {% if not session.uid %}
+            <a href="{{ url_for('auth.register_page') }}" class="btn btn-secondary btn-lg">Đăng ký miễn phí</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">1000+</div>
+                <div class="stat-label">Khóa học</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Giảng viên</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">50000+</div>
+                <div class="stat-label">Học viên</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">4.8</div>
+                <div class="stat-label">Đánh giá trung bình</div>
+            </div>
+        </div>
+    </div>
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Danh mục khóa học</h2>
+        </div>
+        <div class="categories-grid" id="categoriesGrid">
+            <a href="{{ url_for('main.courses', category='programming') }}" class="category-card">
+                <div class="category-icon">💻</div>
+                <div class="category-name">Lập trình</div>
+                <div class="category-count">150+ khóa</div>
+            </a>
+            <a href="{{ url_for('main.courses', category='design') }}" class="category-card">
+                <div class="category-icon">🎨</div>
+                <div class="category-name">Thiết kế</div>
+                <div class="category-count">80+ khóa</div>
+            </a>
+            <a href="{{ url_for('main.courses', category='business') }}" class="category-card">
+                <div class="category-icon">💼</div>
+                <div class="category-name">Kinh doanh</div>
+                <div class="category-count">120+ khóa</div>
+            </a>
+            <a href="{{ url_for('main.courses', category='marketing') }}" class="category-card">
+                <div class="category-icon">📢</div>
+                <div class="category-name">Marketing</div>
+                <div class="category-count">90+ khóa</div>
+            </a>
+            <a href="{{ url_for('main.courses', category='data-science') }}" class="category-card">
+                <div class="category-icon">📊</div>
+                <div class="category-name">Khoa học dữ liệu</div>
+                <div class="category-count">60+ khóa</div>
+            </a>
+        </div>
+    </section>
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Khóa học nổi bật</h2>
+            <a href="{{ url_for('main.courses') }}" class="section-link">Xem tất cả →</a>
+        </div>
+        <div class="courses-grid" id="featuredCourses">
+            <div class="course-card" onclick="window.location.href='/courses'">
+                <div class="course-thumbnail-placeholder">📚</div>
+                <div class="course-content">
+                    <div class="course-category">Lập trình</div>
+                    <h3 class="course-title">Lập trình Python từ cơ bản đến nâng cao</h3>
+                    <div class="course-instructor">Nguyễn Văn A</div>
+                    <div class="course-meta">
+                        <span class="course-meta-item">👥 1,234</span>
+                        <span class="course-meta-item">⭐ 4.8</span>
+                    </div>
+                </div>
+            </div>
+            <div class="course-card" onclick="window.location.href='/courses'">
+                <div class="course-thumbnail-placeholder">🎨</div>
+                <div class="course-content">
+                    <div class="course-category">Thiết kế</div>
+                    <h3 class="course-title">UI/UX Design cho người mới bắt đầu</h3>
+                    <div class="course-instructor">Trần Thị B</div>
+                    <div class="course-meta">
+                        <span class="course-meta-item">👥 856</span>
+                        <span class="course-meta-item">⭐ 4.9</span>
+                    </div>
+                </div>
+            </div>
+            <div class="course-card" onclick="window.location.href='/courses'">
+                <div class="course-thumbnail-placeholder">📊</div>
+                <div class="course-content">
+                    <div class="course-category">Khoa học dữ liệu</div>
+                    <h3 class="course-title">Machine Learning với Python</h3>
+                    <div class="course-instructor">Lê Văn C</div>
+                    <div class="course-meta">
+                        <span class="course-meta-item">👥 2,345</span>
+                        <span class="course-meta-item">⭐ 4.7</span>
+                    </div>
+                </div>
+            </div>
+            <div class="course-card" onclick="window.location.href='/courses'">
+                <div class="course-thumbnail-placeholder">💼</div>
+                <div class="course-content">
+                    <div class="course-category">Kinh doanh</div>
+                    <h3 class="course-title">Khởi nghiệp từ A đến Z</h3>
+                    <div class="course-instructor">Phạm Văn D</div>
+                    <div class="course-meta">
+                        <span class="course-meta-item">👥 1,567</span>
+                        <span class="course-meta-item">⭐ 4.6</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endblock %}
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - EduLearn</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%); }
+        .auth-card { width: 100%; max-width: 420px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 40px; box-shadow: var(--shadow-lg); }
+        .auth-logo { text-align: center; margin-bottom: 32px; }
+        .auth-logo-icon { width: 60px; height: 60px; background: linear-gradient(135deg, var(--accent), var(--pink)); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px; box-shadow: 0 0 30px rgba(79, 156, 249, 0.3); }
+        .auth-logo-text { font-size: 1.5rem; font-weight: 800; }
+        .auth-logo-text span { color: var(--accent); }
+        .auth-title { text-align: center; font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; }
+        .auth-subtitle { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 32px; }
+        .auth-form { display: flex; flex-direction: column; gap: 16px; }
+        .auth-form .form-group { margin-bottom: 0; }
+        .auth-form .form-input, .auth-form .form-select { padding: 14px 16px; font-size: 0.95rem; }
+        .auth-btn { width: 100%; padding: 14px; font-size: 1rem; margin-top: 8px; }
+        .role-selector { display: flex; gap: 12px; }
+        .role-option { flex: 1; padding: 12px; background: var(--bg-surface); border: 2px solid var(--border); border-radius: var(--radius-md); cursor: pointer; text-align: center; transition: all 0.15s; }
+        .role-option:hover { border-color: var(--border-hover); }
+        .role-option.selected { border-color: var(--accent); background: var(--accent-light); }
+        .role-option input { display: none; }
+        .role-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        .role-label { font-size: 0.85rem; font-weight: 600; }
+        .auth-footer { text-align: center; margin-top: 24px; color: var(--text-muted); font-size: 0.9rem; }
+        .auth-footer a { color: var(--accent); font-weight: 600; }
+        .auth-footer a:hover { text-decoration: underline; }
+        .auth-error { background: var(--red-light); color: var(--red); padding: 12px 16px; border-radius: var(--radius-md); font-size: 0.85rem; display: none; }
+        .auth-error.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">📚</div>
+                <div class="auth-logo-text">Edu<span>Learn</span></div>
+            </div>
+            <h1 class="auth-title">Tạo tài khoản mới</h1>
+            <p class="auth-subtitle">Tham gia cùng hàng nghìn học viên</p>
+            <div class="auth-error" id="authError"></div>
+            <form class="auth-form" id="registerForm">
+                <div class="form-group">
+                    <label class="form-label">Họ và tên</label>
+                    <input type="text" class="form-input" id="name" placeholder="Nguyễn Văn A" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="email" placeholder="nhập@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" class="form-input" id="password" placeholder="••••••••" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Đăng ký với vai trò</label>
+                    <div class="role-selector">
+                        <label class="role-option selected" id="studentRole">
+                            <input type="radio" name="role" value="student" checked>
+                            <span class="role-icon">🎓</span>
+                            <span class="role-label">Học viên</span>
+                        </label>
+                        <label class="role-option" id="instructorRole">
+                            <input type="radio" name="role" value="instructor">
+                            <span class="role-icon">👨‍🏫</span>
+                            <span class="role-label">Giảng viên</span>
+                        </label>
+                        <label class="role-option" id="adminRole">
+                            <input type="radio" name="role" value="admin">
+                            <span class="role-icon">⚡</span>
+                            <span class="role-label">Admin</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group" id="adminSecretGroup" style="display: none;">
+                    <label class="form-label">Mã bảo mật Admin</label>
+                    <input type="password" class="form-input" id="adminSecret" placeholder="Nhập mã bảo mật">
+                </div>
+                <button type="submit" class="btn btn-primary auth-btn" id="registerBtn">Tạo tài khoản</button>
+            </form>
+            <p class="auth-footer">Đã có tài khoản? <a href="{{ url_for('auth.login_page') }}">Đăng nhập</a></p>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script>
+        const firebaseConfig = {{ firebase_web_config | tojson }};
+        if (!firebaseConfig.apiKey || firebaseConfig.apiKey === '') {
+            console.error('Firebase Web API Key chưa được cấu hình. Thêm FIREBASE_WEB_API_KEY vào file .env (lấy từ Firebase Console > Project Settings > Your apps)');
+        }
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const registerForm = document.getElementById('registerForm');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const registerBtn = document.getElementById('registerBtn');
+        const errorDiv = document.getElementById('authError');
+        const roleOptions = document.querySelectorAll('.role-option');
+        let selectedRole = 'student';
+        const adminSecretGroup = document.getElementById('adminSecretGroup');
+        const adminSecretInput = document.getElementById('adminSecret');
+        
+        roleOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                roleOptions.forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedRole = option.querySelector('input').value;
+                
+                // Show/hide admin secret field
+                if (selectedRole === 'admin') {
+                    adminSecretGroup.style.display = 'block';
+                } else {
+                    adminSecretGroup.style.display = 'none';
+                    adminSecretInput.value = '';
+                }
+            });
+        });
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const adminSecret = adminSecretInput.value;
+            
+            if (!name || !email || !password) { showError('Vui lòng nhập đầy đủ thông tin'); return; }
+            if (password.length < 6) { showError('Mật khẩu phải có ít nhất 6 ký tự'); return; }
+            if (selectedRole === 'admin' && adminSecret !== 'edulearn_admin_2026') { showError('Mã bảo mật Admin không đúng'); return; }
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Đang tạo tài khoản...';
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await userCredential.user.updateProfile({ displayName: name });
+                const idToken = await userCredential.user.getIdToken();
+                const response = await fetch('/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken, name, role: selectedRole, adminSecret }), credentials: 'include' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Đăng ký thất bại');
+                if (selectedRole === 'admin') {
+                    window.location.href = '/admin';
+                } else if (selectedRole === 'instructor') {
+                    window.location.href = '/instructor/dashboard';
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                const code = (error && error.code) || '';
+                const msg = (error && error.message) || '';
+                showError(getErrorMessage(code || msg));
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Tạo tài khoản';
+            }
+        });
+        function showError(message) {
+            errorDiv.textContent = (message != null && message !== '') ? String(message) : 'Đã xảy ra lỗi, vui lòng thử lại';
+            errorDiv.classList.add('show');
+        }
+        function getErrorMessage(errorCode) {
+            if (errorCode == null || errorCode === '') return 'Đã xảy ra lỗi, vui lòng thử lại';
+            const messages = {
+                'auth/configuration-not-found': 'Cấu hình Firebase chưa đúng. Vui lòng kiểm tra lại cấu hình Firebase Web.',
+                'auth/api-key-not-valid': 'Firebase API Key chưa hợp lệ. Vui lòng kiểm tra FIREBASE_WEB_API_KEY.',
+                'auth/email-already-in-use': 'Email đã được sử dụng',
+                'auth/invalid-email': 'Email không hợp lệ',
+                'auth/weak-password': 'Mật khẩu phải có ít nhất 6 ký tự',
+                'auth/network-request-failed': 'Lỗi kết nối mạng',
+                'auth/operation-not-allowed': 'Phương thức đăng ký chưa được bật. Vào Firebase Console > Authentication > Sign-in method, bật Email/Password.'
+            };
+            const codeStr = String(errorCode);
+            for (const key in messages) {
+                if (codeStr.indexOf(key) !== -1) return messages[key];
+            }
+            return codeStr || 'Đã xảy ra lỗi, vui lòng thử lại';
+        }
+    </script>
+</body>
+</html>

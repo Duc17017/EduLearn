@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EduLearn - Học trực tuyến{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">📚</div>
+                <div class="logo-text">Edu<span>Learn</span></div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">Menu</div>
+                <a href="{{ url_for('main.index') }}" class="nav-item {% if request.endpoint == 'main.index' %}active{% endif %}">
+                    <span class="nav-icon">🏠</span> Trang chủ
+                </a>
+                <a href="{{ url_for('main.courses') }}" class="nav-item {% if request.endpoint == 'main.courses' %}active{% endif %}">
+                    <span class="nav-icon">📚</span> Khóa học
+                </a>
+
+                {% if session.uid %}
+                <div class="nav-section">Học tập</div>
+                <a href="{{ url_for('main.dashboard') }}" class="nav-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                    <span class="nav-icon">📊</span> Bảng điều khiển
+                </a>
+                <a href="{{ url_for('main.profile') }}" class="nav-item {% if request.endpoint == 'main.profile' %}active{% endif %}">
+                    <span class="nav-icon">👤</span> Hồ sơ
+                </a>
+
+                {% if session.role in ['instructor', 'admin'] %}
+                <div class="nav-section">Giảng viên</div>
+                <a href="{{ url_for('main.instructor_dashboard') }}" class="nav-item {% if 'instructor' in request.endpoint %}active{% endif %}">
+                    <span class="nav-icon">🎬</span> Quản lý khóa
+                </a>
+                <a href="{{ url_for('main.instructor_create_course') }}" class="nav-item">
+                    <span class="nav-icon">➕</span> Tạo khóa mới
+                </a>
+                {% endif %}
+
+                {% if session.role == 'admin' %}
+                <div class="nav-section">Admin</div>
+                <a href="{{ url_for('main.admin_dashboard') }}" class="nav-item {% if 'admin' in request.endpoint %}active{% endif %}">
+                    <span class="nav-icon">⚙️</span> Dashboard
+                </a>
+                <a href="{{ url_for('main.admin_users') }}" class="nav-item {% if request.endpoint == 'main.admin_users' %}active{% endif %}">
+                    <span class="nav-icon">👥</span> Quản lý Users
+                </a>
+                {% endif %}
+
+                <div class="nav-section">Tài khoản</div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-item">
+                    <span class="nav-icon">🚪</span> Đăng xuất
+                </a>
+                {% else %}
+                <div class="nav-section">Tài khoản</div>
+                <a href="{{ url_for('auth.login_page') }}" class="nav-item {% if request.endpoint == 'auth.login_page' %}active{% endif %}">
+                    <span class="nav-icon">🔑</span> Đăng nhập
+                </a>
+                <a href="{{ url_for('auth.register_page') }}" class="nav-item {% if request.endpoint == 'auth.register_page' %}active{% endif %}">
+                    <span class="nav-icon">📝</span> Đăng ký
+                </a>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Navbar -->
+            <nav class="navbar">
+                <div class="navbar-search">
+                    <span class="navbar-search-icon">🔍</span>
+                    <input type="text" placeholder="Tìm kiếm khóa học..." id="searchInput">
+                </div>
+                <div class="navbar-links">
+                    {% if session.uid %}
+                    <div class="navbar-user" id="userMenu">
+                        <div class="user-avatar">{{ session.name[:1]|upper if session.name else 'U' }}</div>
+                        <span class="user-name">{{ session.name or 'User' }}</span>
+                    </div>
+                    {% else %}
+                    <a href="{{ url_for('auth.login_page') }}" class="btn btn-primary">Đăng nhập</a>
+                    {% endif %}
+                </div>
+            </nav>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div style="padding: 16px 32px;">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {% if category == 'success' %}✓{% elif category == 'error' %}✗{% elif category == 'warning' %}⚠{% else %}ℹ{% endif %}
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Page Content -->
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Chatbot Widget (only when logged in) -->
+    {% if session.uid %}
+    {% include 'partials/chatbot_widget.html' %}
+    {% endif %}
+
+    <script>window.firebaseWebConfig = {{ firebase_web_config | tojson }};</script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+{% block title %}Quản lý khóa học - EduLearn{% endblock %}
+{% block content %}
+<div class="instructor-page">
+    <div class="page-header">
+        <h1>Quản lý khóa học</h1>
+        <a href="{{ url_for('main.instructor_create_course') }}" class="btn btn-primary">
+            + Tạo khóa học mới
+        </a>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">📚</div>
+            <div class="stat-content">
+                <div class="stat-value" id="totalCourses">0</div>
+                <div class="stat-label">Tổng khóa học</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <div class="stat-value" id="totalStudents">0</div>
+                <div class="stat-label">Tổng học viên</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+                <div class="stat-value" id="publishedCourses">0</div>
+                <div class="stat-label">Đã xuất bản</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+                <div class="stat-value" id="draftCourses">0</div>
+                <div class="stat-label">Bản nháp</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="courses-section">
+        <div class="section-header">
+            <h2>Danh sách khóa học</h2>
+            <div class="filter-tabs">
+                <button class="tab active" data-filter="all">Tất cả</button>
+                <button class="tab" data-filter="published">Đã xuất bản</button>
+                <button class="tab" data-filter="draft">Bản nháp</button>
+            </div>
+        </div>
+
+        <div class="courses-grid" id="instructorCourses">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Đang tải...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .instructor-page {
+        padding: 32px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    @media (max-width: 1024px) {
+        .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--accent-light);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .courses-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .section-header h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 8px;
+    }
+
+    .tab {
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .tab:hover {
+        border-color: var(--accent);
+    }
+
+    .tab.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
+
+    .courses-grid {
+        padding: 24px;
+        display: grid;
+        gap: 16px;
+    }
+
+    .course-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: var(--bg-surface);
+        border-radius: 10px;
+        transition: all 0.15s;
+    }
+
+    .course-row:hover {
+        background: var(--bg-secondary);
+    }
+
+    .course-thumb {
+        width: 120px;
+        height: 70px;
+        background: var(--bg-card);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .course-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .course-title {
+        font-weight: 600;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .course-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        display: flex;
+        gap: 16px;
+    }
+
+    .course-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-published {
+        background: var(--green-light);
+        color: var(--green);
+    }
+
+    .status-draft {
+        background: var(--orange-light);
+        color: var(--orange);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px;
+        color: var(--text-muted);
+    }
+
+    .loading-state {
+        text-align: center;
+        padding: 48px;
+    }
+
+    .loading-state .spinner {
+        margin: 0 auto 16px;
+    }
+</style>
+
+<script>
+async function loadInstructorCourses() {
+    try {
+        const response = await fetch('/courses/my-courses');
+        const result = await response.json();
+
+        if (result.success) {
+            const courses = result.courses || [];
+            renderCourses(courses);
+            updateStats(courses);
+        }
+    } catch (error) {
+        console.error('Failed to load courses:', error);
+        document.getElementById('instructorCourses').innerHTML = 
+            '<div class="empty-state">Lỗi khi tải dữ liệu</div>';
+    }
+}
+
+function renderCourses(courses) {
+    const container = document.getElementById('instructorCourses');
+    
+    if (!courses.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>Chưa có khóa học nào</p>
+                <a href="/instructor/create-course" class="btn btn-primary" style="margin-top: 16px;">
+                    Tạo khóa học đầu tiên
+                </a>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = courses.map(course => `
+        <div class="course-row" data-status="${course.isPublished ? 'published' : 'draft'}">
+            <div class="course-thumb">📚</div>
+            <div class="course-info">
+                <div class="course-title">${course.title}</div>
+                <div class="course-meta">
+                    <span>👥 ${course.enrolledCount || 0} học viên</span>
+                    <span>📝 ${course.totalLessons || 0} bài học</span>
+                </div>
+            </div>
+            <span class="status-badge ${course.isPublished ? 'status-published' : 'status-draft'}">
+                ${course.isPublished ? 'Đã xuất bản' : 'Nháp'}
+            </span>
+            <div class="course-actions">
+                <a href="/instructor/course/${course.id}" class="btn btn-sm btn-secondary">Sửa</a>
+                <button class="btn btn-sm btn-outline" onclick="togglePublish('${course.id}', ${!course.isPublished})">
+                    ${course.isPublished ? 'Ẩn' : 'Xuất bản'}
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteCourse('${course.id}')">Xóa</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateStats(courses) {
+    const total = courses.length;
+    const published = courses.filter(c => c.isPublished).length;
+    const draft = total - published;
+    const students = courses.reduce((sum, c) => sum + (c.enrolledCount || 0), 0);
+
+    document.getElementById('totalCourses').textContent = total;
+    document.getElementById('publishedCourses').textContent = published;
+    document.getElementById('draftCourses').textContent = draft;
+    document.getElementById('totalStudents').textContent = students;
+}
+
+// Filter tabs
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        const filter = tab.dataset.filter;
+        document.querySelectorAll('.course-row').forEach(row => {
+            if (filter === 'all' || row.dataset.status === filter) {
+                row.style.display = 'flex';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+});
+
+async function togglePublish(courseId, publish) {
+    try {
+        const response = await fetch(`/courses/${courseId}/update`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isPublished: publish })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            loadInstructorCourses();
+        }
+    } catch (error) {
+        console.error('Failed to update course:', error);
+    }
+}
+
+async function deleteCourse(courseId) {
+    if (!confirm('Bạn có chắc muốn xóa khóa học này?')) return;
+    
+    try {
+        const response = await fetch(`/courses/${courseId}/delete`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            loadInstructorCourses();
+        }
+    } catch (error) {
+        console.error('Failed to delete course:', error);
+    }
+}
+
+loadInstructorCourses();
+</script>
+{% endblock %}
